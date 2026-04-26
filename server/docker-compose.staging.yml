@@ -1,0 +1,16 @@
+version: '3.8'
+
+# Staging environment overrides
+services:
+  app:
+    environment:
+      - NODE_ENV=staging
+      - PORT=5000
+    env_file:
+      - .env.staging
+    ports:
+      - "5001:5000"  # Different port for staging
+
+  nginx:
+    ports:
+      - "8080:80"  # Different port for staging
