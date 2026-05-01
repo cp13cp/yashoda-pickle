@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { buildUrl } from "./api";
 import { supabase } from "./supabase";
 import { useNavigate } from "react-router-dom";
 
@@ -46,7 +47,7 @@ export default function Admin() {
       setProducts(productsData || []);
 
       // Fetch users from the backend admin endpoint
-      const userResponse = await fetch("http://localhost:5000/admin/users");
+      const userResponse = await fetch(buildUrl("/admin/users"));
       if (userResponse.ok) {
         const usersData = await userResponse.json();
         setUsers(usersData || []);
@@ -58,7 +59,7 @@ export default function Admin() {
       }
 
       // Fetch orders from the backend admin endpoint
-      const orderResponse = await fetch("http://localhost:5000/admin/orders");
+      const orderResponse = await fetch(buildUrl("/admin/orders"));
       if (orderResponse.ok) {
         const ordersData = await orderResponse.json();
         setOrders(ordersData || []);
@@ -77,7 +78,7 @@ export default function Admin() {
 
   const addProduct = async (product) => {
     try {
-      const response = await fetch("http://localhost:5000/admin/products", {
+      const response = await fetch(buildUrl("/admin/products"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(product),
@@ -101,7 +102,7 @@ export default function Admin() {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/admin/products/${id}`, {
+      const response = await fetch(buildUrl(`/admin/products/${id}`), {
         method: "DELETE",
       });
 
@@ -120,7 +121,7 @@ export default function Admin() {
 
   const editProduct = async (id, updatedProduct) => {
     try {
-      const response = await fetch(`http://localhost:5000/admin/products/${id}`, {
+      const response = await fetch(buildUrl(`/admin/products/${id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedProduct),
@@ -142,7 +143,7 @@ export default function Admin() {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/admin/orders/${orderId}`, {
+      const response = await fetch(buildUrl(`/admin/orders/${orderId}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),

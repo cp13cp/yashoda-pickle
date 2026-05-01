@@ -45,7 +45,7 @@ export default function Signup() {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/send-verification-email', {
+      const response = await fetch(buildUrl("/send-verification-email"), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

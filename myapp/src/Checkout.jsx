@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "./api";
 import { supabase } from "./supabase";
 
 export default function Checkout({ cart = [], setCart }) {
@@ -39,7 +39,7 @@ export default function Checkout({ cart = [], setCart }) {
     } else {
       // Handle Online Payment
       try {
-        const { data } = await axios.post("http://localhost:5000/create-order", {
+        const { data } = await api.post("/create-order", {
           amount: totalPrice,
         });
 
@@ -87,7 +87,7 @@ export default function Checkout({ cart = [], setCart }) {
 
       console.log("📦 Sending order data:", orderData);
 
-      const response = await axios.post("http://localhost:5000/place-order", orderData);
+      const response = await api.post("/place-order", orderData);
       if (response.status === 200) {
         alert("Order placed successfully!");
         setCart([]);

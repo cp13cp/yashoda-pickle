@@ -1,8 +1,8 @@
-import axios from "axios";
+import { api } from "./api";
 
 const handlePayment = async () => {
   // 1. Backend se order lo
-  const { data } = await axios.post("http://localhost:5000/create-order", {
+  const { data } = await api.post("/create-order", {
     amount: totalPrice,
   });
 

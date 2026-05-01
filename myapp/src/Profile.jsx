@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "./api";
 import { supabase } from "./supabase";
 import { useNavigate } from "react-router-dom";
 
@@ -37,8 +37,8 @@ export default function Profile() {
     setOrdersMessage("");
 
     try {
-      const response = await axios.get(
-        `http://localhost:5000/orders?user_email=${encodeURIComponent(userEmail)}`
+      const response = await api.get(
+        `/orders?user_email=${encodeURIComponent(userEmail)}`
       );
       const orderData = response.data || [];
       setOrders(orderData.map((order) => ({
@@ -110,7 +110,7 @@ export default function Profile() {
 
     setOrdersMessage("");
     try {
-      const response = await axios.post(`http://localhost:5000/orders/${orderId}/cancel`);
+      const response = await api.post(`/orders/${orderId}/cancel`);
       const updatedOrder = response.data.order;
       setOrders((prev) => prev.map((order) => (order.id === orderId ? updatedOrder : order)));
       setOrdersMessage("Order cancelled. Admin has been notified.");

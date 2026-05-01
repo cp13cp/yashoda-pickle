@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "./api";
 import { supabase } from "./supabase";
 
 const statusColors = {
@@ -36,8 +36,8 @@ export default function OrderTracking() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `http://localhost:5000/orders?user_email=${encodeURIComponent(user?.email)}`
+      const response = await api.get(
+        `/orders?user_email=${encodeURIComponent(user?.email)}`
       );
       setOrders(response.data || []);
     } catch (error) {

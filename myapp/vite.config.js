@@ -14,12 +14,19 @@ export default defineConfig(({ mode }) => ({
     sourcemap: mode === 'development',
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Vendor chunks for better caching
-          'react-vendor': ['react', 'react-dom'],
-          'router-vendor': ['react-router-dom'],
-          'supabase-vendor': ['@supabase/supabase-js'],
-          'ui-vendor': ['lucide-react'],
+        manualChunks(id) {
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react')) {
+            return 'react-vendor';
+          }
+          if (id.includes('node_modules/react-router-dom')) {
+            return 'router-vendor';
+          }
+          if (id.includes('node_modules/@supabase/supabase-js')) {
+            return 'supabase-vendor';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'ui-vendor';
+          }
         },
       },
     },

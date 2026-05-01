@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { buildUrl } from "./api";
 import { supabase } from "./supabase";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -79,7 +80,7 @@ export default function Login() {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/send-password-reset-email', {
+      const response = await fetch(buildUrl("/send-password-reset-email"), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +109,7 @@ export default function Login() {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/send-verification-email', {
+      const response = await fetch(buildUrl("/send-verification-email"), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
