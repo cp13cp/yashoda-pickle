@@ -17,7 +17,13 @@ console.log(`🚀 Starting server in ${process.env.NODE_ENV || 'development'} mo
 console.log(`📄 Loaded env file: ${envFile}`);
 
 const app = express();
+const cors = require("cors");
 
+app.use(cors({
+  origin: "https://stately-cocada-a12943.netlify.app",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
