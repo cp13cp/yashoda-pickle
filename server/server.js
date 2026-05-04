@@ -13,18 +13,17 @@ dotenv.config();
 
 const app = express();
 
-/* ===================== ✅ CORS (TOP MOST) ===================== */
+/* ===================== ✅ CORS (FIXED) ===================== */
 
 const allowedOrigin = "https://stately-cocada-a12943.netlify.app";
 
 app.use(cors({
   origin: allowedOrigin,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
 }));
 
-app.options("*", cors());
+// 🔥 DO NOT USE app.options("*")
 
 /* ===================== ✅ BASIC MIDDLEWARE ===================== */
 
@@ -34,11 +33,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 app.use(morgan("dev"));
 
-/* ===================== ✅ HELMET (SAFE VERSION) ===================== */
+/* ===================== ✅ HELMET FIX ===================== */
 
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
-/* ===================== ✅ RATE LIMIT (SAFE) ===================== */
+/* ===================== ✅ RATE LIMIT ===================== */
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -48,7 +49,7 @@ const limiter = rateLimit({
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
-  skip: (req) => req.method === "OPTIONS" // 🔥 IMPORTANT
+  skip: (req) => req.method === "OPTIONS" // 🔥 important
 });
 
 app.use("/api", limiter);
@@ -79,7 +80,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-/* ===================== TEST ===================== */
+/* ===================== TEST ROUTES ===================== */
 
 app.get("/", (req, res) => {
   res.send("API Running ✅");
@@ -99,7 +100,7 @@ app.post("/send-password-reset-email", async (req, res) => {
       return res.status(400).json({ error: "Email required" });
     }
 
-    const resetLink = `https://stately-cocada-a12943.netlify.app/reset-password`;
+    const resetLink = "https://stately-cocada-a12943.netlify.app/reset-password";
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
@@ -111,7 +112,7 @@ app.post("/send-password-reset-email", async (req, res) => {
     res.json({ success: true });
 
   } catch (err) {
-    console.log(err);
+    console.log("❌ Email Error:", err);
     res.status(500).json({ error: "Email failed" });
   }
 });
