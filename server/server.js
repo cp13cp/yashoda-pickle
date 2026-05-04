@@ -9,76 +9,127 @@ const rateLimit = require("express-rate-limit");
 const compression = require("compression");
 const morgan = require("morgan");
 
-// Load env
 dotenv.config();
 
 const app = express();
 
-/* ================= CORS FIX ================= */
+/* ===================== ✅ CORS (TOP MOST) ===================== */
 
-const allowedOrigins = [
-  "https://stately-cocada-a12943.netlify.app",
-  "http://localhost:5173"
-];
+const allowedOrigin = "https://stately-cocada-a12943.netlify.app";
 
 app.use(cors({
-  origin: function (origin, callback) {
-    console.log("🌍 Incoming Origin:", origin);
-
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log("❌ Blocked by CORS:", origin);
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: allowedOrigin,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
 
 app.options("*", cors());
 
-/* ================= SECURITY ================= */
+/* ===================== ✅ BASIC MIDDLEWARE ===================== */
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: [
-        "'self'",
-        "https://ehocckmjsdsxdcdkgrgk.supabase.co",
-        "https://api.razorpay.com",
-        "https://yashoda-pickle-1.onrender.com"
-      ]
-    }
-  }
-}));
-
-/* ================= MIDDLEWARE ================= */
-
-app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
+app.use(compression());
 app.use(morgan("dev"));
 
-/* ================= RATE LIMIT ================= */
+/* ===================== ✅ HELMET (SAFE VERSION) ===================== */
+
+app.use(helmet());
+
+/* ===================== ✅ RATE LIMIT (SAFE) ===================== */
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
 });
 
-app.use(limiter);
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  skip: (req) => req.method === "OPTIONS" // 🔥 IMPORTANT
+});
 
-/* ================= TEST ROUTE ================= */
+app.use("/api", limiter);
+app.use("/send-password-reset-email", authLimiter);
+
+/* ===================== SERVICES ===================== */
+
+// Razorpay
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
+});
+
+// Supabase
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// Email
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+/* ===================== TEST ===================== */
 
 app.get("/", (req, res) => {
-  res.send("API Working ✅");
+  res.send("API Running ✅");
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "OK" });
+});
+
+/* ===================== PASSWORD RESET ===================== */
+
+app.post("/send-password-reset-email", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email required" });
+    }
+
+    const resetLink = `https://stately-cocada-a12943.netlify.app/reset-password`;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Reset Password",
+      html: `<a href="${resetLink}">Reset Password</a>`
+    });
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Email failed" });
+  }
+});
+
+/* ===================== ERROR HANDLER ===================== */
+
+app.use((err, req, res, next) => {
+  console.error("❌ Error:", err.message);
+
+  res.status(500).json({
+    error: err.message || "Server error"
+  });
+});
+
+/* ===================== START ===================== */
+
+const PORT = process.env.PORT || 5001;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
