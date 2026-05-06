@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "./supabase";
 import { useNavigate } from "react-router-dom";
+import { buildUrl } from "./api";
 
 export default function Signup() {
   const [name, setName] = useState("");

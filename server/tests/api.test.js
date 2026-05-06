@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../server'); // Adjust path as needed
+const app = require('..'); // Adjust path as needed
 
 describe('API Health Checks', () => {
   test('GET /health should return healthy status', async () => {

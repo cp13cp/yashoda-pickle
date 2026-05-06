@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { buildUrl } from "./api";
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState("");

@@ -90,6 +90,39 @@ app.get("/health", (req, res) => {
   res.json({ status: "OK" });
 });
 
+/* ===================== EMAIL VERIFICATION ===================== */
+
+app.post("/send-verification-email", async (req, res) => {
+  try {
+    const { email, name } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email required" });
+    }
+
+    const verificationLink = "https://stately-cocada-a12943.netlify.app/verify-email";
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Verify Your Email",
+      html: `
+        <h2>Welcome ${name || 'User'}!</h2>
+        <p>Please verify your email by clicking the link below:</p>
+        <a href="${verificationLink}?email=${encodeURIComponent(email)}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+          Verify Email
+        </a>
+      `
+    });
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.log("❌ Email Error:", err);
+    res.status(500).json({ error: "Email failed" });
+  }
+});
+
 /* ===================== PASSWORD RESET ===================== */
 
 app.post("/send-password-reset-email", async (req, res) => {
@@ -114,6 +147,59 @@ app.post("/send-password-reset-email", async (req, res) => {
   } catch (err) {
     console.log("❌ Email Error:", err);
     res.status(500).json({ error: "Email failed" });
+  }
+});
+
+/* ===================== PASSWORD UPDATE ===================== */
+
+app.post("/reset-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ error: "Email and password required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
+
+    if (!supabaseAdmin) {
+      return res.status(500).json({ error: "Service unavailable" });
+    }
+
+    // Get all users to find the one with matching email
+    const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers({ limit: 1000 });
+
+    if (listError) {
+      console.log("❌ Error listing users:", listError);
+      return res.status(400).json({ error: "Could not verify user" });
+    }
+
+    // Find user by email
+    const user = users?.users?.find(u => u.email === email);
+
+    if (!user) {
+      console.log("❌ User not found:", email);
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Update user password
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      user.id,
+      { password: newPassword }
+    );
+
+    if (updateError) {
+      console.log("❌ Password update error:", updateError);
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    res.json({ success: true, message: "Password updated successfully" });
+
+  } catch (err) {
+    console.log("❌ Reset password error:", err);
+    res.status(500).json({ error: "Failed to update password" });
   }
 });
 
