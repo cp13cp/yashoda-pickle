@@ -71,13 +71,21 @@ const supabaseAdmin = createClient(
 
 // Email
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+});
+
+// Verify email configuration on startup
+transporter.verify((error, success) => {
+  if (error) {
+    console.log("❌ Email configuration error:", error.message);
+    console.log("⚠️  Make sure EMAIL_USER and EMAIL_PASS are set in environment variables");
+  } else {
+    console.log("✅ Email service ready");
+  }
 });
 
 /* ===================== TEST ROUTES ===================== */
@@ -100,26 +108,37 @@ app.post("/send-verification-email", async (req, res) => {
       return res.status(400).json({ error: "Email required" });
     }
 
+    // Validate email environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.log("❌ Missing email configuration: EMAIL_USER or EMAIL_PASS not set");
+      return res.status(500).json({ error: "Email service not configured" });
+    }
+
     const verificationLink = "https://stately-cocada-a12943.netlify.app/verify-email";
 
-    await transporter.sendMail({
+    const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: "Verify Your Email",
+      subject: "Verify Your Email - Yashoda Pickle",
       html: `
         <h2>Welcome ${name || 'User'}!</h2>
+        <p>Thank you for signing up with Yashoda Pickle.</p>
         <p>Please verify your email by clicking the link below:</p>
-        <a href="${verificationLink}?email=${encodeURIComponent(email)}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+        <a href="${verificationLink}?email=${encodeURIComponent(email)}" style="display: inline-block; margin-top: 10px; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
           Verify Email
         </a>
+        <p style="margin-top: 20px; color: #666;">If you didn't sign up, please ignore this email.</p>
       `
-    });
+    };
 
-    res.json({ success: true });
+    await transporter.sendMail(mailOptions);
+
+    res.json({ success: true, message: "Verification email sent" });
 
   } catch (err) {
-    console.log("❌ Email Error:", err);
-    res.status(500).json({ error: "Email failed" });
+    console.log("❌ Email Error:", err.message);
+    console.log("📧 Stack:", err.stack);
+    res.status(500).json({ error: err.message || "Failed to send verification email" });
   }
 });
 
@@ -133,20 +152,38 @@ app.post("/send-password-reset-email", async (req, res) => {
       return res.status(400).json({ error: "Email required" });
     }
 
+    // Validate email environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.log("❌ Missing email configuration: EMAIL_USER or EMAIL_PASS not set");
+      return res.status(500).json({ error: "Email service not configured" });
+    }
+
     const resetLink = "https://stately-cocada-a12943.netlify.app/reset-password";
 
-    await transporter.sendMail({
+    const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: "Reset Password",
-      html: `<a href="${resetLink}">Reset Password</a>`
-    });
+      subject: "Reset Your Password - Yashoda Pickle",
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>We received a request to reset your password.</p>
+        <p>Click the link below to reset your password:</p>
+        <a href="${resetLink}" style="display: inline-block; margin-top: 10px; padding: 12px 24px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+          Reset Password
+        </a>
+        <p style="margin-top: 20px; color: #666;">If you didn't request this, please ignore this email.</p>
+        <p style="margin-top: 10px; color: #999; font-size: 12px;">This link will expire in 24 hours.</p>
+      `
+    };
 
-    res.json({ success: true });
+    await transporter.sendMail(mailOptions);
+
+    res.json({ success: true, message: "Password reset email sent" });
 
   } catch (err) {
-    console.log("❌ Email Error:", err);
-    res.status(500).json({ error: "Email failed" });
+    console.log("❌ Email Error:", err.message);
+    console.log("📧 Stack:", err.stack);
+    res.status(500).json({ error: err.message || "Failed to send password reset email" });
   }
 });
 
